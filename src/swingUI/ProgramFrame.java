@@ -1,10 +1,16 @@
 /**
  * @author Zawada Robert <ZawadaRobertDev@gmail.com>
  * @version 1.0.0
+ * 
+ * +Dodano minimalny rozmiar okna
+ * +Dodano wprowadzanie akcji przez klikniêcie Enter w dowolnym polu wprowadzajacym
+ * +Zmienino NimbusFeelAndLook na WindowsLookAndFeel
+ * 
  */
 package swingUI;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.SystemColor;
 import java.awt.event.KeyAdapter;
@@ -17,11 +23,18 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -43,6 +56,8 @@ import swingUI.custom.BasicEvent;
 import swingUI.custom.CharacterFilter;
 import swingUI.custom.Check;
 import swingUI.custom.GhostTextField;
+import swingUI.custom.UILocale;
+
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -53,7 +68,9 @@ public class ProgramFrame extends JFrame {
 	private JButton addButton;
 	private JButton clearButton;
 	private JButton deleteButton;
+	private JButton loadButton;
 	private JButton pathsButton;
+	private JButton saveButton;
 	private JPanel buttonsPane;
 	private JPanel centerPane;
 	private JPanel contentPane;
@@ -72,9 +89,9 @@ public class ProgramFrame extends JFrame {
 	private JTextField nameField;
 	private JTextField prevField;
 	private JTextField timeField;
+	private JTextField totalDurationField;
 	private ActivityTableModel model;
 	private JPanel totalDurationPane;
-	private JTextField totalDurationField;
 	private JLabel totalDurationLabel;
 	private JMenuBar menuBar;
 	private JMenu fileMenu;
@@ -85,7 +102,7 @@ public class ProgramFrame extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
+					UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
 					frame = new ProgramFrame();
 					frame.setLocationRelativeTo(null);
 					BasicEvent.performDialogExitFromX(frame);
@@ -102,6 +119,7 @@ public class ProgramFrame extends JFrame {
 	public ProgramFrame() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setSize(800, 600);
+		setMinimumSize(new Dimension(600, 500));
 		model = new ActivityTableModel();
 		int[] columnWidth = {40, 160, 60, 100, 100, 60, 60, 60, 60, 80};
 		
@@ -132,10 +150,12 @@ public class ProgramFrame extends JFrame {
 		idField = new GhostTextField("Id akcji");
 		idField.setToolTipText("Id akcji - dowolna liczba wiêksza od 0");
 		((AbstractDocument) idField.getDocument()).setDocumentFilter(new CharacterFilter("[^0-9]"));
+		idField.addActionListener(e -> addToModel());
 		inputPane.add(idField);
 		
 		nameField = new GhostTextField("Nazwa");
 		nameField.setToolTipText("Nazwa akcji");
+		nameField.addActionListener(e -> addToModel());
 		inputPane.add(nameField);
 		
 		timePane = new JPanel();
@@ -145,6 +165,7 @@ public class ProgramFrame extends JFrame {
 		timeField = new GhostTextField("Czas trwania");
 		timeField.setToolTipText("Czas trwania akcji - w okreœlonej jednostce czasu");
 		((AbstractDocument) timeField.getDocument()).setDocumentFilter(new CharacterFilter("[^0-9.]"));
+		timeField.addActionListener(e -> addToModel());
 		timePane.add(timeField);
 		
 		timeSpinner = new JSpinner();
@@ -157,6 +178,7 @@ public class ProgramFrame extends JFrame {
 		prevField = new GhostTextField("Poprzedzaj¹ce akcje");
 		prevField.setToolTipText("Lista id poprzedzaj¹cych akcji, odzdzielonych przecinkami");
 		((AbstractDocument) prevField.getDocument()).setDocumentFilter(new CharacterFilter("[^0-9, ]"));
+		prevField.addActionListener(e -> addToModel());
 		inputPane.add(prevField);
 		
 		addButton = new JButton("Dodaj akcjê");
@@ -210,6 +232,28 @@ public class ProgramFrame extends JFrame {
 		deleteButton.addActionListener(e -> removeAction());
 		buttonsPane.add(deleteButton, BorderLayout.WEST);
 		
+		saveButton = new JButton("Zapisz");
+		saveButton.addActionListener(e -> {
+			try {
+				saveFile();
+			}
+			catch (Exception e1) {
+				BasicEvent.dialogError(frame,e1.getMessage());
+			}
+		});
+		buttonsPane.add(saveButton, BorderLayout.SOUTH);
+		
+		loadButton = new JButton("Wczytaj");
+		loadButton.addActionListener(e -> {
+			try {
+				loadFile();
+			}
+			catch (Exception e1) {
+				BasicEvent.dialogError(frame,e1.getMessage());
+			}
+		});
+		buttonsPane.add(loadButton, BorderLayout.NORTH);
+		
 		tablePane = new JPanel();
 		tablePane.setBorder(BorderFactory.createTitledBorder("Lista akcji"));
 		centerPane.add(tablePane, BorderLayout.CENTER);
@@ -232,16 +276,21 @@ public class ProgramFrame extends JFrame {
 		tablePane.add(tableScroll);
 		table.setBackground(SystemColor.text);
 		
+		totalDurationField.setText(ConvertUtil.toLegibleString(model.getTotalDuration()));
+		
+		UILocale.set("pl_PL");
 	}
 	
+	
 	void removeAction() {
-		int row = table.getSelectedRow();
-		if (row != -1) {
-			int id = Integer.parseInt(model.getValueAt(row,0).toString());
-			if (BasicEvent.dialogYesNo(frame, "Czy na pewno chcesz usun¹æ akcjê o id "+id+"?")) {
+		int[] rows = table.getSelectedRows();
+		Set<Integer> ids = Arrays.stream(rows).map(r -> Integer.parseInt(model.getValueAt(r,0).toString())).boxed().collect(Collectors.toSet());
+		String idList = ids.stream().map(i -> i.toString()).collect(Collectors.joining(","));
+		
+		if (BasicEvent.dialogYesNo(frame, "Czy na pewno chcesz usun¹æ akcje o id: "+idList+"?")) {
+			for (int id : ids)
 				model.removeId(id);
-				totalDurationField.setText(ConvertUtil.toLegibleString(model.getTotalDuration()));
-			}
+			totalDurationField.setText(ConvertUtil.toLegibleString(model.getTotalDuration()));
 		}
 	}
 	
@@ -292,6 +341,39 @@ public class ProgramFrame extends JFrame {
 	void printPaths() {
 		String output = String.join("\r\n",model.getCryticalPathsList());
 		pathsTxtArea.setText(output);
+		totalDurationField.setText(ConvertUtil.toLegibleString(model.getTotalDuration()));
+	}
+	
+	void saveFile() throws FileNotFoundException, IOException {
+		JFileChooser fileChooser = new JFileChooser();
+		
+		if (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+			File file = fileChooser.getSelectedFile();
+			fileChooser.getFileFilter().toString().replaceFirst(".*extensions=\\[(.*)]]", ".$1").replaceFirst(".*AcceptAllFileFilter.*", "");
+			try (ObjectOutputStream output = new ObjectOutputStream(new FileOutputStream(file))) {
+				output.writeObject(model.getActivitySet());
+			}
+		}
+	}
+	
+	void loadFile() throws FileNotFoundException, IOException, ClassNotFoundException {
+		JFileChooser fileChooser = new JFileChooser();
+		
+		if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+		File file = fileChooser.getSelectedFile();
+			try (ObjectInputStream input = new ObjectInputStream(new FileInputStream(file))) {
+				
+				TreeSet<CPMActivity> humanSet = (TreeSet<CPMActivity>) input.readObject();
+				for (CPMActivity act : humanSet) {
+					model.addActivity(act);
+				}
+				model.refresh();
+				totalDurationField.setText(ConvertUtil.toLegibleString(model.getTotalDuration()));
+			}
+			catch (Exception e) {
+				BasicEvent.dialogError(frame,"Wskazany plik nie zawiera poprawnej listy aktywnoœci.");
+			}
+		}
 	}
 	
 }
