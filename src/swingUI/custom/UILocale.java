@@ -1,10 +1,6 @@
 package swingUI.custom;
 
-import java.awt.Color;
 import java.awt.event.KeyEvent;
-import java.util.Enumeration;
-
-import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 
 public abstract class UILocale {

@@ -1,11 +1,14 @@
 /**
  * @author Zawada Robert <ZawadaRobertDev@gmail.com>
- * @version 1.0.0
+ * @version 1.0.4
  * 
  * +Dodano minimalny rozmiar okna
  * +Dodano wprowadzanie akcji przez klikniêcie Enter w dowolnym polu wprowadzajacym
  * +Zmienino NimbusFeelAndLook na WindowsLookAndFeel
- * 
+ * +Dodano mo¿liwoœæ usuniêcia kilku zaznaczonych akcji z tabeli
+ * +Wstêpna implementacja zapisu i wczytania list akcji 
+ * +Dodano t³umaczenie UIMenagera
+ * +Zmieniono sposób dzia³ania okienek wyboru Tak/Nie aby wspó³dzia³a³ z t³umaczeniem UIMenager
  */
 package swingUI;
 
@@ -23,10 +26,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -34,7 +34,6 @@ import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
-import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -228,7 +227,7 @@ public class ProgramFrame extends JFrame {
 		clearButton.addActionListener(e -> removeAllActions());
 		buttonsPane.add(clearButton, BorderLayout.EAST);
 		
-		deleteButton = new JButton("Usuñ zaznaczon¹ akcjê");
+		deleteButton = new JButton("Usuñ zaznaczone akcje");
 		deleteButton.addActionListener(e -> removeAction());
 		buttonsPane.add(deleteButton, BorderLayout.WEST);
 		
@@ -280,12 +279,11 @@ public class ProgramFrame extends JFrame {
 		
 		UILocale.set("pl_PL");
 	}
-	
-	
+		
 	void removeAction() {
 		int[] rows = table.getSelectedRows();
 		Set<Integer> ids = Arrays.stream(rows).map(r -> Integer.parseInt(model.getValueAt(r,0).toString())).boxed().collect(Collectors.toSet());
-		String idList = ids.stream().map(i -> i.toString()).collect(Collectors.joining(","));
+		String idList = ids.stream().map(i -> i.toString()).collect(Collectors.joining(", "));
 		
 		if (BasicEvent.dialogYesNo(frame, "Czy na pewno chcesz usun¹æ akcje o id: "+idList+"?")) {
 			for (int id : ids)

@@ -26,23 +26,13 @@ public abstract class BasicEvent {
 	
 	public static void dialogExit(JFrame frame) {	
 		String message = "Czy na pewno chcesz zakoÒczyÊ dzia≥anie programu?";
-		String title = "Potwierdü";
-		int mode = JOptionPane.YES_NO_OPTION;
-		int type = JOptionPane.QUESTION_MESSAGE;
-		Icon icon = null;
-		String[] options = {"Tak", "Nie"};
-		int confirm = JOptionPane.showOptionDialog(frame, message, title, mode, type, icon, options, options[0]);
+		int confirm = JOptionPane.showConfirmDialog(null, message, "Potwierdü", JOptionPane.YES_NO_OPTION);
 		if (confirm == 0) System.exit(0);
 	}
 	
 	public static boolean dialogYesNo(JFrame frame, String questionText) {	
 		String message = questionText;
-		String title = "Potwierdü";
-		int mode = JOptionPane.YES_NO_OPTION;
-		int type = JOptionPane.QUESTION_MESSAGE;
-		Icon icon = null;
-		String[] options = {"Tak", "Nie"};
-		int confirm = JOptionPane.showOptionDialog(frame, message, title, mode, type, icon, options, options[0]);
+		int confirm = JOptionPane.showConfirmDialog(null, message, "Potwierdü", JOptionPane.YES_NO_OPTION);
 		return (confirm == 0);
 	}
 	
