@@ -60,6 +60,7 @@ import swingUI.custom.UILocale;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.ImageIcon;
 
 public class ProgramFrame extends JFrame {
 	
@@ -95,6 +96,9 @@ public class ProgramFrame extends JFrame {
 	private JMenuBar menuBar;
 	private JMenu fileMenu;
 	private JMenuItem exitMenuItem;
+	private JMenuItem newMenuItem;
+	private JMenuItem openMenuItem;
+	private JMenuItem saveMenuItem;
 	
 	// Uruchomienie aplikacji
 	public static void main(String[] args) {
@@ -116,6 +120,7 @@ public class ProgramFrame extends JFrame {
 	
 	// Okienko programu
 	public ProgramFrame() {
+		UILocale.set("pl_PL");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setSize(800, 600);
 		setMinimumSize(new Dimension(600, 500));
@@ -128,7 +133,39 @@ public class ProgramFrame extends JFrame {
 		fileMenu = new JMenu("Plik");
 		menuBar.add(fileMenu);
 		
+		newMenuItem = new JMenuItem("Nowy");
+		newMenuItem.setIcon(new ImageIcon(ProgramFrame.class.getResource("/resources/icons8-new-file-24.png")));
+		newMenuItem.addActionListener(e -> removeAllActions());
+		fileMenu.add(newMenuItem);
+		
+		openMenuItem = new JMenuItem("Otwórz...");
+		openMenuItem.setIcon(new ImageIcon(ProgramFrame.class.getResource("/resources/icons8-opened-folder-24.png")));
+		openMenuItem.addActionListener(e -> {
+			try {
+				openFile();
+			}
+			catch (Exception e1) {
+				BasicEvent.dialogError(frame,e1.getMessage());
+			}
+		});
+		fileMenu.add(openMenuItem);
+		
+		saveMenuItem = new JMenuItem("Zapisz jako...");
+		saveMenuItem.setIcon(new ImageIcon(ProgramFrame.class.getResource("/resources/icons8-save-as-24.png")));
+		saveMenuItem.addActionListener(e -> {
+			try {
+				saveFile();
+			}
+			catch (Exception e1) {
+				BasicEvent.dialogError(frame,e1.getMessage());
+			}
+		});
+		fileMenu.add(saveMenuItem);
+		
+		fileMenu.addSeparator();
+		
 		exitMenuItem = new JMenuItem("Wyjœcie");
+		exitMenuItem.setIcon(new ImageIcon(ProgramFrame.class.getResource("/resources/icons8-shutdown-24.png")));
 		exitMenuItem.addActionListener(e -> BasicEvent.dialogExit(frame));
 		fileMenu.add(exitMenuItem);
 		
@@ -231,28 +268,6 @@ public class ProgramFrame extends JFrame {
 		deleteButton.addActionListener(e -> removeAction());
 		buttonsPane.add(deleteButton, BorderLayout.WEST);
 		
-		saveButton = new JButton("Zapisz");
-		saveButton.addActionListener(e -> {
-			try {
-				saveFile();
-			}
-			catch (Exception e1) {
-				BasicEvent.dialogError(frame,e1.getMessage());
-			}
-		});
-		buttonsPane.add(saveButton, BorderLayout.SOUTH);
-		
-		loadButton = new JButton("Wczytaj");
-		loadButton.addActionListener(e -> {
-			try {
-				loadFile();
-			}
-			catch (Exception e1) {
-				BasicEvent.dialogError(frame,e1.getMessage());
-			}
-		});
-		buttonsPane.add(loadButton, BorderLayout.NORTH);
-		
 		tablePane = new JPanel();
 		tablePane.setBorder(BorderFactory.createTitledBorder("Lista akcji"));
 		centerPane.add(tablePane, BorderLayout.CENTER);
@@ -276,8 +291,6 @@ public class ProgramFrame extends JFrame {
 		table.setBackground(SystemColor.text);
 		
 		totalDurationField.setText(ConvertUtil.toLegibleString(model.getTotalDuration()));
-		
-		UILocale.set("pl_PL");
 	}
 		
 	void removeAction() {
@@ -354,7 +367,7 @@ public class ProgramFrame extends JFrame {
 		}
 	}
 	
-	void loadFile() throws FileNotFoundException, IOException, ClassNotFoundException {
+	void openFile() throws FileNotFoundException, IOException, ClassNotFoundException {
 		JFileChooser fileChooser = new JFileChooser();
 		
 		if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
