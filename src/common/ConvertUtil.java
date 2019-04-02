@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public abstract class ConvertUtil {
+public final class ConvertUtil {
 	
 	public static List<Integer> toIntegerList(String str, char separator) {
 		List<Integer> list = Stream.of(str.split("\\s*"+separator+"\\s*")).map(Integer::parseInt).collect(Collectors.toList());

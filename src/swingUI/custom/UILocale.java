@@ -28,7 +28,6 @@ public abstract class UILocale {
 			UIManager.put("FileChooser.fileTypeHeaderText", "Typ pliku");
 			UIManager.put("FileChooser.filterLabelText", "Typ pliku:");
 			UIManager.put("FileChooser.foldersLabelText", "Foldery");
-	//		UIManager.put("FileChooser.goupFolderActionLabelText", "Poziom wy¿ej");
 			UIManager.put("FileChooser.helpButtonText", "Pomoc");
 			UIManager.put("FileChooser.helpButtonToolTipText", "Pomoc");
 			UIManager.put("FileChooser.homeFolderAccessibleName", "Pulpit");

@@ -1,12 +1,14 @@
 /**
  * @author Zawada Robert <ZawadaRobertDev@gmail.com>
- * @version 1.0.4
+ * @version 1.0.6
  * 
+ * Zmainy wzglêdem wersji 1.0.0:
  * +Dodano minimalny rozmiar okna
  * +Dodano wprowadzanie akcji przez klikniêcie Enter w dowolnym polu wprowadzajacym
- * +Zmienino NimbusFeelAndLook na WindowsLookAndFeel
+ * +Zmienino FeelAndLook  z Nimbus na Windows (tymczasowo?)
  * +Dodano mo¿liwoœæ usuniêcia kilku zaznaczonych akcji z tabeli
- * +Wstêpna implementacja zapisu i wczytania list akcji 
+ * +Wstêpna poprawiona implementacja zapisu i wczytania list akcji
+ * +Dodano belkê menu z opcjami: Nowy, Otwórz i Zapisz Jako
  * +Dodano t³umaczenie UIMenagera
  * +Zmieniono sposób dzia³ania okienek wyboru Tak/Nie aby wspó³dzia³a³ z t³umaczeniem UIMenager
  */
@@ -46,6 +48,8 @@ import javax.swing.JTextField;
 import javax.swing.SpinnerListModel;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.AbstractDocument;
 
 import common.ActivityTableModel;
@@ -54,6 +58,7 @@ import common.ConvertUtil;
 import swingUI.custom.BasicEvent;
 import swingUI.custom.CharacterFilter;
 import swingUI.custom.Check;
+import swingUI.custom.FileUtil;
 import swingUI.custom.GhostTextField;
 import swingUI.custom.UILocale;
 
@@ -68,9 +73,7 @@ public class ProgramFrame extends JFrame {
 	private JButton addButton;
 	private JButton clearButton;
 	private JButton deleteButton;
-	private JButton loadButton;
 	private JButton pathsButton;
-	private JButton saveButton;
 	private JPanel buttonsPane;
 	private JPanel centerPane;
 	private JPanel contentPane;
@@ -99,6 +102,11 @@ public class ProgramFrame extends JFrame {
 	private JMenuItem newMenuItem;
 	private JMenuItem openMenuItem;
 	private JMenuItem saveMenuItem;
+	
+	private final String extension = "als";
+	private final FileFilter filter = new FileNameExtensionFilter("Lista aktywnoœci: (*."+extension+")", extension);
+	private JMenu helpMenu;
+	private JMenuItem aboutMenuItem;
 	
 	// Uruchomienie aplikacji
 	public static void main(String[] args) {
@@ -168,6 +176,13 @@ public class ProgramFrame extends JFrame {
 		exitMenuItem.setIcon(new ImageIcon(ProgramFrame.class.getResource("/resources/icons8-shutdown-24.png")));
 		exitMenuItem.addActionListener(e -> BasicEvent.dialogExit(frame));
 		fileMenu.add(exitMenuItem);
+		
+		helpMenu = new JMenu("Pomoc");
+		menuBar.add(helpMenu);
+		
+		aboutMenuItem = new JMenuItem("O programie");
+		aboutMenuItem.setIcon(new ImageIcon(ProgramFrame.class.getResource("/resources/icons8-info-24.png")));
+		helpMenu.add(aboutMenuItem);
 		
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -357,10 +372,17 @@ public class ProgramFrame extends JFrame {
 	
 	void saveFile() throws FileNotFoundException, IOException {
 		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setAcceptAllFileFilterUsed(false);
+		fileChooser.addChoosableFileFilter(filter);
 		
 		if (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+			
 			File file = fileChooser.getSelectedFile();
-			fileChooser.getFileFilter().toString().replaceFirst(".*extensions=\\[(.*)]]", ".$1").replaceFirst(".*AcceptAllFileFilter.*", "");
+			
+			if (!FileUtil.getExtension(file).equals(extension)) {
+				file = new File(file.toString()+"."+extension);
+			}
+			
 			try (ObjectOutputStream output = new ObjectOutputStream(new FileOutputStream(file))) {
 				output.writeObject(model.getActivitySet());
 			}
@@ -369,15 +391,17 @@ public class ProgramFrame extends JFrame {
 	
 	void openFile() throws FileNotFoundException, IOException, ClassNotFoundException {
 		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setAcceptAllFileFilterUsed(false);
+		fileChooser.addChoosableFileFilter(filter);
 		
 		if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
 		File file = fileChooser.getSelectedFile();
 			try (ObjectInputStream input = new ObjectInputStream(new FileInputStream(file))) {
 				
 				TreeSet<CPMActivity> humanSet = (TreeSet<CPMActivity>) input.readObject();
-				for (CPMActivity act : humanSet) {
+				for (CPMActivity act : humanSet) 
 					model.addActivity(act);
-				}
+				
 				model.refresh();
 				totalDurationField.setText(ConvertUtil.toLegibleString(model.getTotalDuration()));
 			}
