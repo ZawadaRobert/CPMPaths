@@ -8,7 +8,7 @@ import javax.swing.Icon;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
-public abstract class BasicEvent {
+public final class BasicEvent {
 	public static void performDialogExitFromButton(JFrame frame, AbstractButton button) {
 		button.addActionListener(e -> {
 			dialogExit(frame);

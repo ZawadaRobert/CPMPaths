@@ -1,6 +1,6 @@
 /**
  * @author Zawada Robert <ZawadaRobertDev@gmail.com>
- * @version 1.0.6
+ * @version 1.0.7
  * 
  * Zmainy wzglêdem wersji 1.0.0:
  * +Dodano minimalny rozmiar okna
@@ -11,6 +11,8 @@
  * +Dodano belkê menu z opcjami: Nowy, Otwórz i Zapisz Jako
  * +Dodano t³umaczenie UIMenagera
  * +Zmieniono sposób dzia³ania okienek wyboru Tak/Nie aby wspó³dzia³a³ z t³umaczeniem UIMenager
+ * +Ograniczono wybór plików zapisu i otwierania do rozszerzenia *.als
+ * Dodano mo¿liwoœæ dodawania zapisanych list do edytowanej
  */
 package swingUI;
 
@@ -107,6 +109,7 @@ public class ProgramFrame extends JFrame {
 	private final FileFilter filter = new FileNameExtensionFilter("Lista aktywnoœci: (*."+extension+")", extension);
 	private JMenu helpMenu;
 	private JMenuItem aboutMenuItem;
+	private JMenuItem addMenuItem;
 	
 	// Uruchomienie aplikacji
 	public static void main(String[] args) {
@@ -145,6 +148,18 @@ public class ProgramFrame extends JFrame {
 		newMenuItem.setIcon(new ImageIcon(ProgramFrame.class.getResource("/resources/icons8-new-file-24.png")));
 		newMenuItem.addActionListener(e -> removeAllActions());
 		fileMenu.add(newMenuItem);
+		
+		addMenuItem = new JMenuItem("Dodaj...");
+		addMenuItem.setIcon(new ImageIcon(ProgramFrame.class.getResource("/resources/icons8-add-book-24.png")));
+		addMenuItem.addActionListener(e -> {
+			try {
+				addFile();
+			}
+			catch (Exception e1) {
+				BasicEvent.dialogError(frame,e1.getMessage());
+			}
+		});
+		fileMenu.add(addMenuItem);
 		
 		openMenuItem = new JMenuItem("Otwórz...");
 		openMenuItem.setIcon(new ImageIcon(ProgramFrame.class.getResource("/resources/icons8-opened-folder-24.png")));
@@ -398,12 +413,18 @@ public class ProgramFrame extends JFrame {
 		File file = fileChooser.getSelectedFile();
 			try (ObjectInputStream input = new ObjectInputStream(new FileInputStream(file))) {
 				
-				TreeSet<CPMActivity> humanSet = (TreeSet<CPMActivity>) input.readObject();
-				for (CPMActivity act : humanSet) 
-					model.addActivity(act);
+				Object openedFile = input.readObject();
 				
-				model.refresh();
-				totalDurationField.setText(ConvertUtil.toLegibleString(model.getTotalDuration()));
+				if (openedFile instanceof TreeSet<?>) {
+					@SuppressWarnings("unchecked")
+					TreeSet<CPMActivity> activitySet = (TreeSet<CPMActivity>) openedFile;
+					model.clear();
+					for (CPMActivity act : activitySet) 
+						model.addActivity(act);
+					totalDurationField.setText(ConvertUtil.toLegibleString(model.getTotalDuration()));
+				}
+				else
+					BasicEvent.dialogError(frame,"Wskazany plik nie zawiera poprawnej listy aktywnoœci.");
 			}
 			catch (Exception e) {
 				BasicEvent.dialogError(frame,"Wskazany plik nie zawiera poprawnej listy aktywnoœci.");
@@ -411,4 +432,30 @@ public class ProgramFrame extends JFrame {
 		}
 	}
 	
+	void addFile() throws FileNotFoundException, IOException, ClassNotFoundException {
+		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setAcceptAllFileFilterUsed(false);
+		fileChooser.addChoosableFileFilter(filter);
+		
+		if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+		File file = fileChooser.getSelectedFile();
+			try (ObjectInputStream input = new ObjectInputStream(new FileInputStream(file))) {
+				
+				Object openedFile = input.readObject();
+				
+				if (openedFile instanceof TreeSet<?>) {
+					@SuppressWarnings("unchecked")
+					TreeSet<CPMActivity> activitySet = (TreeSet<CPMActivity>) openedFile;
+					for (CPMActivity act : activitySet) 
+						model.addActivity(act);
+					totalDurationField.setText(ConvertUtil.toLegibleString(model.getTotalDuration()));
+				}
+				else
+					BasicEvent.dialogError(frame,"Wskazany plik nie zawiera poprawnej listy aktywnoœci.");
+			}
+			catch (Exception e) {
+				BasicEvent.dialogError(frame,"Wskazany plik nie zawiera poprawnej listy aktywnoœci.");
+			}
+		}
+	}
 }
