@@ -1,8 +1,8 @@
 /**
  * @author Zawada Robert <ZawadaRobertDev@gmail.com>
- * @version 1.0.7
+ * @version 1.0.8
  * 
- * Zmainy wzglêdem wersji 1.0.0:
+ * Zmainy wzglêdem wersji 1.0 8
  * +Dodano minimalny rozmiar okna
  * +Dodano wprowadzanie akcji przez klikniêcie Enter w dowolnym polu wprowadzajacym
  * +Zmienino FeelAndLook  z Nimbus na Windows (tymczasowo?)
@@ -12,7 +12,10 @@
  * +Dodano t³umaczenie UIMenagera
  * +Zmieniono sposób dzia³ania okienek wyboru Tak/Nie aby wspó³dzia³a³ z t³umaczeniem UIMenager
  * +Ograniczono wybór plików zapisu i otwierania do rozszerzenia *.als
- * Dodano mo¿liwoœæ dodawania zapisanych list do edytowanej
+ * +Dodano mo¿liwoœæ dodawania zapisanych list do edytowanej
+ * +Dodano klasê i obiekt versji programu
+ * +Wstêpne dodanie okienka "o progranie"
+ * 
  */
 package swingUI;
 
@@ -57,6 +60,7 @@ import javax.swing.text.AbstractDocument;
 import common.ActivityTableModel;
 import common.CPMActivity;
 import common.ConvertUtil;
+import common.VersionNumber;
 import swingUI.custom.BasicEvent;
 import swingUI.custom.CharacterFilter;
 import swingUI.custom.Check;
@@ -104,12 +108,13 @@ public class ProgramFrame extends JFrame {
 	private JMenuItem newMenuItem;
 	private JMenuItem openMenuItem;
 	private JMenuItem saveMenuItem;
-	
-	private final String extension = "als";
-	private final FileFilter filter = new FileNameExtensionFilter("Lista aktywnoœci: (*."+extension+")", extension);
 	private JMenu helpMenu;
 	private JMenuItem aboutMenuItem;
 	private JMenuItem addMenuItem;
+	
+	private final VersionNumber version = new VersionNumber(1,0,8);
+	private final String extension = "als";
+	private final FileFilter filter = new FileNameExtensionFilter("Lista aktywnoœci: (*."+extension+")", extension);
 	
 	// Uruchomienie aplikacji
 	public static void main(String[] args) {
@@ -197,6 +202,7 @@ public class ProgramFrame extends JFrame {
 		
 		aboutMenuItem = new JMenuItem("O programie");
 		aboutMenuItem.setIcon(new ImageIcon(ProgramFrame.class.getResource("/resources/icons8-info-24.png")));
+		aboutMenuItem.addActionListener(e -> BasicEvent.dialogInformation(frame, "v"+version));
 		helpMenu.add(aboutMenuItem);
 		
 		contentPane = new JPanel();
@@ -325,13 +331,14 @@ public class ProgramFrame extends JFrame {
 		
 	void removeAction() {
 		int[] rows = table.getSelectedRows();
-		Set<Integer> ids = Arrays.stream(rows).map(r -> Integer.parseInt(model.getValueAt(r,0).toString())).boxed().collect(Collectors.toSet());
-		String idList = ids.stream().map(i -> i.toString()).collect(Collectors.joining(", "));
-		
-		if (BasicEvent.dialogYesNo(frame, "Czy na pewno chcesz usun¹æ akcje o id: "+idList+"?")) {
-			for (int id : ids)
-				model.removeId(id);
-			totalDurationField.setText(ConvertUtil.toLegibleString(model.getTotalDuration()));
+		if (rows.length!=0) {
+			Set<Integer> ids = Arrays.stream(rows).map(r -> Integer.parseInt(model.getValueAt(r,0).toString())).boxed().collect(Collectors.toSet());
+			String idList = ids.stream().map(i -> i.toString()).collect(Collectors.joining(", "));
+			if (BasicEvent.dialogYesNo(frame, "Czy na pewno chcesz usun¹æ akcje o id: "+idList+"?")) {
+				for (int id : ids)
+					model.removeId(id);
+				totalDurationField.setText(ConvertUtil.toLegibleString(model.getTotalDuration()));
+			}
 		}
 	}
 	
