@@ -2,7 +2,7 @@
  * @author Zawada Robert <ZawadaRobertDev@gmail.com>
  * @version 1.0.8
  * 
- * Zmainy wzglêdem wersji 1.0 8
+ * Zmainy wzglêdem wersji 1.0
  * +Dodano minimalny rozmiar okna
  * +Dodano wprowadzanie akcji przez klikniêcie Enter w dowolnym polu wprowadzajacym
  * +Zmienino FeelAndLook  z Nimbus na Windows (tymczasowo?)
@@ -112,7 +112,7 @@ public class ProgramFrame extends JFrame {
 	private JMenuItem aboutMenuItem;
 	private JMenuItem addMenuItem;
 	
-	private final VersionNumber version = new VersionNumber(1,0,8);
+	private final VersionNumber version = new VersionNumber(1,0,9);
 	private final String extension = "als";
 	private final FileFilter filter = new FileNameExtensionFilter("Lista aktywnoœci: (*."+extension+")", extension);
 	
@@ -380,8 +380,8 @@ public class ProgramFrame extends JFrame {
 			BasicEvent.dialogError(frame,"Id poprzedzaj¹cej aktywnoœci nie mo¿e byæ takie samo jak id wprowadzanej aktywnosci.");
 		else {
 			CPMActivity newActivity = getNewActivityFromPane();
-			model.addActivity(newActivity);
-			model.refresh();
+			model.addRow(newActivity);
+			model.calculate();
 		}
 		totalDurationField.setText(ConvertUtil.toLegibleString(model.getTotalDuration()));
 	}
@@ -406,7 +406,7 @@ public class ProgramFrame extends JFrame {
 			}
 			
 			try (ObjectOutputStream output = new ObjectOutputStream(new FileOutputStream(file))) {
-				output.writeObject(model.getActivitySet());
+				output.writeObject(model.getData());
 			}
 		}
 	}
@@ -427,7 +427,7 @@ public class ProgramFrame extends JFrame {
 					TreeSet<CPMActivity> activitySet = (TreeSet<CPMActivity>) openedFile;
 					model.clear();
 					for (CPMActivity act : activitySet) 
-						model.addActivity(act);
+						model.addRow(act);
 					totalDurationField.setText(ConvertUtil.toLegibleString(model.getTotalDuration()));
 				}
 				else
@@ -454,7 +454,7 @@ public class ProgramFrame extends JFrame {
 					@SuppressWarnings("unchecked")
 					TreeSet<CPMActivity> activitySet = (TreeSet<CPMActivity>) openedFile;
 					for (CPMActivity act : activitySet) 
-						model.addActivity(act);
+						model.addRow(act);
 					totalDurationField.setText(ConvertUtil.toLegibleString(model.getTotalDuration()));
 				}
 				else

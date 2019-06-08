@@ -1,17 +1,17 @@
 package common;
 import java.io.Serializable;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
 public class CPMActivity implements Comparable<CPMActivity>, Serializable {	
-	private static final long serialVersionUID = 8297224384371996552L;
+	private static final long serialVersionUID = -8510054641848960754L;
 	private Integer id;
 	private String name;
-	private Duration time, earlyStart, lateStart, earlyFinish, lateFinish, reserve;
-	private boolean crytical;
+	private Duration time, earlyStart, lateFinish;
 	private Set<Integer> prevList, nextList;
 	
 	public CPMActivity (Integer id, String name, Duration time) {
@@ -54,18 +54,10 @@ public class CPMActivity implements Comparable<CPMActivity>, Serializable {
 		}
 	}
 	
-	public void addNextActionFromList (Set<CPMActivity> list) {
+	public void addNextActionFromList (Collection<CPMActivity> list) {
 		for(CPMActivity activity : list) {
 			this.addNextActionFromIndex(activity.getId(),activity.getPrevList());
 		}
-	}
-	
-	public void calculateReserve () {
-		reserve=lateStart.minus(earlyStart);
-		if (reserve.isZero())
-			crytical=true;
-		else
-			crytical=false;
 	}
 	
 	public Object[] getArrayRow() {
@@ -82,6 +74,10 @@ public class CPMActivity implements Comparable<CPMActivity>, Serializable {
 				isCrytical()
 				};
 		return array;
+	}
+	
+	public boolean isId(Integer id) {
+		return this.id==id;
 	}
 	
 	public Integer getId() {
@@ -114,15 +110,18 @@ public class CPMActivity implements Comparable<CPMActivity>, Serializable {
 	
 	public void setEarlyStart(Duration earlyStart) {
 		this.earlyStart = earlyStart;
-		earlyFinish=earlyStart.plus(time);
 	}
 	
 	public Duration getLateStart() {
-		return lateStart;
+		if (getLateFinish() == null)
+			return null;
+		return getLateFinish().minus(time);
 	}
 	
 	public Duration getEarlyFinish() {
-		return earlyFinish;
+		if (getEarlyStart() == null)
+			return null;
+		return getEarlyStart().plus(time);
 	}
 	
 	public Duration getLateFinish() {
@@ -131,15 +130,17 @@ public class CPMActivity implements Comparable<CPMActivity>, Serializable {
 	
 	public void setLateFinish(Duration lateFinish) {
 		this.lateFinish = lateFinish;
-		lateStart=lateFinish.minus(time);
 	}
 	
 	public Duration getReserve() {
-		return reserve;
+		if (getEarlyStart()==null)
+			return null;
+		return getLateStart().minus(getEarlyStart());
 	}
 	
+	//Return true if diffrence beetween Early Start and Early Finish is Zero
 	public boolean isCrytical() {
-		return crytical;
+		return getReserve().isZero();
 	}
 	
 	public Set<Integer> getPrevList() {
@@ -204,7 +205,7 @@ public class CPMActivity implements Comparable<CPMActivity>, Serializable {
 		CPMActivity activity = (CPMActivity) obj;
 		return Objects.equals(id, activity.id);
 	}
-
+	
 	@Override
 	public int compareTo(CPMActivity other) {
 		int value = this.getId() - other.getId();
